@@ -44,7 +44,7 @@
                   <environment>Sandbox</environment>
                   <workers>1</workers>
                   <applicationName>NRE-userServices</applicationName>
-                  <muleVersion>3.4.2</muleVersion>
+                  <muleVersion>4.3.0</muleVersion>
                   <objectStoreV2>true</objectStoreV2>
                 </cloudHubDeployment>
                 </configuration>
