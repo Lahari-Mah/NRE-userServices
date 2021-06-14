@@ -37,6 +37,16 @@
                             <artifactId>mysql-connector-java</artifactId>
                         </sharedLibrary>
                     </sharedLibraries>
+                <cloudHubDeployment>
+                  <uri>https://anypoint.mulesoft.com</uri>
+                  <username>lahariteja</username>
+                  <password>Mah@987654321</password>
+                  <environment>Sandbox</environment>
+                  <workers>1</workers>
+                  <applicationName>NRE-userServices</applicationName>
+                  <muleVersion>3.4.2</muleVersion>
+                  <objectStoreV2>true</objectStoreV2>
+                </cloudHubDeployment>
                 </configuration>
 			</plugin>
 		<plugin>
