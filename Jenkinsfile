@@ -8,12 +8,6 @@ pipeline
     	}
     }
     
-    stage('Munit Testing'){
-     steps{
-    		sh 'mvn test'
-    	}
-    }
-    
     stage('Deploy Application to MuleSoft CloudHub'){
      steps{
     		sh 'mvn package deploy -DmuleDeploy -DskipTests'
