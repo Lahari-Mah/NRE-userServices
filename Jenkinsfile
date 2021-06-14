@@ -1,6 +1,6 @@
 pipeline
 {
-  agent sny
+  agent any
   stages{
     stage('Build Application'){
       steps{
