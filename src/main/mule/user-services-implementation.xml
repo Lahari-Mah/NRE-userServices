@@ -454,7 +454,7 @@ output application/json
 			</ee:variables>
 		</ee:transform>
 		<db:select doc:name="allUserAlertRetrieval" doc:id="3066c8d8-daee-4aa6-aa43-3497883af44c" config-ref="MysqlDatabase_Config">
-			<db:sql ><![CDATA[select c.alert_id,b.customer_id, b.subscription_id,c.*
+			<db:sql ><![CDATA[select b.customer_id,c.*
 from xxtrain_status_details a, xxtrain_subscription_details b, xxtrain_alert_details c
 where a.status_type_id = c.status_type_id and a.status_type_name = 'ACTIVE'
 and a.status_type_id = b.status_type_id
