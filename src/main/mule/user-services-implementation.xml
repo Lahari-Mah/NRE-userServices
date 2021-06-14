@@ -1,0 +1,805 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="0cdb16a2-ced4-4117-8097-1f1fbe80406d" />
+	<validation:config name="Validation_Config1" doc:name="Validation Config" doc:id="2d341523-125c-4a9a-889b-4001ccec4a1e" />
+	<flow name="user-registrationFlow" doc:id="fab45949-eea9-4b69-b0f4-a5b3df83ebd6" >
+		<json-logger:logger doc:name="userDBRegistration_Start" doc:id="20da33ea-a870-4fdc-9cbe-22394d7293bc" config-ref="JSON_Logger_Config" message="userDBRegistration Start Logger"/>
+		<ee:transform doc:name="PayloadToArray" doc:id="0eeaa9da-5c9d-4a2d-af5c-076cac42c64f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[payload]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="CustomerRegistration" doc:id="39d26f10-6f3d-43dc-a81f-2f33153b7a77" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[insert into xxtrain_customer_details (customer_id,first_name,last_name,status_type_id,email_id,phone_no,
+created_by,last_updated_by)
+values(:customerId,:firstName,:lastName,1,:emailId,:phoneNo,:customerId,:customerId)]]></db:sql>
+		</db:bulk-insert>
+		<json-logger:logger doc:name="userRegistrationFlow_AfterDB" doc:id="d7814eca-44dc-4dc8-a88a-2ffd5a313a6c" config-ref="JSON_Logger_Config" message="User Registration After DB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="SuccessMessage" doc:id="4e3351c7-6107-434d-bc2d-e4ee6c79ef98" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  description: "Success",
+  message: "Customer Registered Successfully!"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="UserDbRegistration_End" doc:id="3ef12d98-62ba-41ca-aebb-17dce21c25c2" config-ref="JSON_Logger_Config" message="UserDbRegistration End Logger" tracePoint="END"/>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d596960a-7d27-4d9e-8596-aa1fee611437" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="c9508599-5f3c-4ffa-b5e3-74248fb6f8a8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="UserRegistration_Logger" doc:id="bda5569b-2637-45c5-9a58-56d6018801a8" config-ref="JSON_Logger_Config" message="UserRegistration Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="allUser-details-retrieveFlow" doc:id="c8dff10d-d6d4-4c05-b4c2-7491748e60e6" >
+		<json-logger:logger doc:name="allUserDetailsRetrieval_Start" doc:id="d6871bce-6e62-426c-8eb0-6ce845dd26ce" config-ref="JSON_Logger_Config" message="allUserDetailsRetrieval Start Logger"/>
+		<db:select doc:name="Retrieve Customers Data" doc:id="3b2df4ac-1b40-4242-ad11-5887f9e53ea4" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select b.status_type_name,a.* from xxtrain_customer_details a, xxtrain_status_details b
+where a.status_type_id = b.status_type_id and b.status_type_name = 'ACTIVE']]></db:sql>
+		</db:select>
+		<json-logger:logger doc:name="allUserDetailsRetrieval_AfterDB" doc:id="f6a83eb8-4863-4511-8e7c-84f6c9358296" config-ref="JSON_Logger_Config" message="All User DetailsRetrieval AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="Payload" doc:id="1758ba9e-3fef-4f47-84a1-0cca54cc7677" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	customerName: (payload01.first_name default '')++ ' ' ++ (payload01.last_name default ''),
+	customerId: payload01.customer_id,
+	statusType: payload01.status_type_name,
+	emailId: payload01.email_id default "",
+	phoneNo: payload01.phone_no
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="allUserDetailsRetrieval_End" doc:id="d33329d4-f9c7-45d8-8695-d214988a6bf3" config-ref="JSON_Logger_Config" message="allUserDetailsRetrieval End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="69059d5e-bad3-4344-829a-32f94037246a" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="5ff542e4-6bd0-47f8-8853-b6e8f6963ea1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="allUser_Retrieval_Logger" doc:id="22839cf2-03b8-4776-ac93-4ca43995d3dc" config-ref="JSON_Logger_Config" message="allUserRetrieval Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-subscriptionFlow" doc:id="50e06217-adb7-4ca6-ac39-484f30145fce" >
+		<json-logger:logger doc:name="userSubscriptionRegistration_Start" doc:id="14a07f54-a812-4e1f-abdd-3656312c180b" config-ref="JSON_Logger_Config" message="User Subscription Registration Start Logger"/>
+		<ee:transform doc:name="URIVariables" doc:id="b8f37514-a15d-43ec-89ac-a30c2f8023c6" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="PayloadJson" doc:id="538624fc-656c-4567-be6c-8e22091c5117" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	'customerId': vars.'custId',
+	'fromTime': $.fromTime,
+	'fromStation': $.fromStation,
+	'toStation': $.toStation,
+	'toTime': $.toTime,
+	'journeyDate': $.journeyDate,
+	('alertService': $.alertService) if($.alertService != null),
+	('alertService': 'No') if($.alertService == null),
+	('advanceNotifyTime': $.advanceNotifyTime) 
+		if($.advanceNotifyTime != null),
+	('advanceNotifyTime': 30) if($.advanceNotifyTime == null)
+ }]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<db:bulk-insert doc:name="CustomerSubscription" doc:id="abcc6fcb-9c27-4d1c-8edf-0884d1cb2ef3" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[insert into xxtrain_subscription_details(customer_id, from_time, from_station, to_station,to_time, journey_date, service_type, advance_notify_time,alert_service)
+values(:customerId,:fromTime,:fromStation,:toStation,:toTime,:journeyDate,'train',:advanceNotifyTime,:alertService)]]></db:sql>
+		</db:bulk-insert>
+		<json-logger:logger doc:name="CustomerSubscription_AfterDB" doc:id="25fd0b6b-2ee3-46ad-a68a-3c2c6dbef354" config-ref="JSON_Logger_Config" message="Customer Subscription AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="FinalPaylaod" doc:id="4aab6b13-0b3a-4992-be08-a3daaa03a00f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var msg = "Subscribed successfully"
+---
+{
+  Description: "Success Message",
+  Message: msg 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="userSubscriptionRegistration_End" doc:id="373aa282-380c-4c5b-91e3-6502b700165d" config-ref="JSON_Logger_Config" message="userSubscriptionRegistration End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="749d8198-7141-40f6-8149-fab950a21615" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="327def95-e526-4eba-accf-f3d44dde0dee" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="userSubscription_Logger" doc:id="09ec543d-fe6f-4ca5-884a-4e93f242b8e7" config-ref="JSON_Logger_Config" message="userSubscription Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="customerName" doc:id="2df362f0-d7bb-4c5a-976d-f6d4d37e94c5" >
+		<db:select doc:name="CustomerName" doc:id="70a2e03d-10a2-45cb-9234-d7cb4b964ce0" config-ref="MysqlDatabase_Config">
+			<db:sql><![CDATA[select concat_ws(" ",first_name,last_name)customerName from xxtrain_customer_details where customer_id = :id]]></db:sql>
+			<db:input-parameters><![CDATA[#[id: vars.id]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="bf5a438d-bdb3-4bff-90dc-d5dbacc8e385" />
+		<set-variable value="#[payload[0].customerName]" doc:name="customerName" doc:id="c8ae7274-98d0-48b2-a444-79986a55279e" variableName="customerName" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d6a4ea2a-7204-423f-b5ce-3d0c142da405" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="a7dbed36-4942-41c5-a5d9-421ef1de72bb" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="custpmerName_Logger" doc:id="7eb72e66-5d6d-4c13-bc1e-8b43acb725af" config-ref="JSON_Logger_Config" message="customer Name Error logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-id-retrievalFlow" doc:id="fbce15cf-ca1a-4a93-ad01-dee9b74bf799" >
+		<json-logger:logger doc:name="userIdRetrieval_Start" doc:id="79f1e510-bdd3-4a16-99af-84677d405b73" config-ref="JSON_Logger_Config" message="User Id Retrieval Start Logger"/>
+		<ee:transform doc:name="URIVariables" doc:id="304e2925-7516-4f5a-a679-3a27e401b0bf" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="id" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:select doc:name="userIdRetrievalFlow" doc:id="08e52db4-fe6e-4ba8-b1bb-39abe98347c5" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select b.status_type_name,a.* from xxtrain_customer_details a, xxtrain_status_details b
+where a.status_type_id = b.status_type_id and customer_id = :customerId and b.status_type_name = 'ACTIVE']]></db:sql>
+			<db:input-parameters ><![CDATA[#['customerId': vars.'id']]]></db:input-parameters>
+		</db:select>
+		<json-logger:logger doc:name="userIdRetrieval_AfterDB" doc:id="01128f10-dfb9-47df-b38c-9a442b41b645" config-ref="JSON_Logger_Config" message="Id Retrieval AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="PayloadJson" doc:id="ddda23d6-9fbc-4d6b-bbc5-ec3d7a2e700a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	customerId: payload01.customer_id,
+	customerName: payload01.first_name ++ ' ' ++ payload01.last_name,
+	statusType: payload01.status_type_name,
+	emailId: payload01.email_id default "",
+	phoneNo: payload01.phone_no
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="userIdRetrieval_End" doc:id="d9a06723-ccf7-43e9-93b2-4ac21563cc82" config-ref="JSON_Logger_Config" message="userIdRetrieval End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ae5c63fd-7f45-46e5-8e1e-90a0c4758ecc" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Message" doc:id="980f889c-b228-40e7-9385-fd762a8c0296" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="userIdRetrieval Logger" doc:id="3c15cada-cd05-4fda-bf76-759ff75c2d04" config-ref="JSON_Logger_Config" message="userIdRetrieval Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="allUserSubscriptions-RetrievalFlow" doc:id="c7c62635-17f2-4c8e-87c2-851a1157f1aa" >
+		<json-logger:logger doc:name="AllUserSubscriptionsRetrieval_Start" doc:id="d90aed6c-2115-42e6-a679-63b7be5873a7" config-ref="JSON_Logger_Config" message="AllUserSubscriptionsRetrieval Start Logger"/>
+		<ee:transform doc:name="CustomerId-var" doc:id="0293778b-6743-43f7-9a3b-8ab8c11d2e20" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:select doc:name="AllUserSubscriptionsRetrieval" doc:id="f92e935b-b4b8-4aaf-9b8e-c7ecf8e75c09" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select b.status_type_name,concat_ws(" ",a.first_name,a.last_name)customerName,
+c.* from xxtrain_customer_details a, xxtrain_status_details b, xxtrain_subscription_details c
+where a.status_type_id = b.status_type_id and c.customer_id = :customerId and a.customer_id = c.customer_id
+and c.status_type_id = b.status_type_id and b.status_type_name = 'ACTIVE']]></db:sql>
+			<db:input-parameters ><![CDATA[#['customerId': vars.custId]]]></db:input-parameters>
+		</db:select>
+		<json-logger:logger doc:name="AllUserSubscriptionsRetrieval_AfterDB" doc:id="1b322b83-3454-4852-9bc5-89800f2deb68" config-ref="JSON_Logger_Config" message="AllUserSubscriptionsRetrieval AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="FinalPayload" doc:id="3f7775ef-2c4a-4a79-b527-f4919d5b08d7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	CustomerName: payload01.customerName,
+	SubscriptionId: payload01.subscription_id,
+	FromTime: payload01.from_time,
+	FromStation: payload01.from_station,
+	ToStation: payload01.to_station,
+	ToTime: payload01.to_time,
+	JourneyDate: payload01.journey_date,
+	ServiceType: payload01.service_type,
+	AdvanceNotifyTime: payload01.advance_notify_time,
+	AlertService: payload01.alert_service,
+	statusType: payload01.status_type_name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="AllUserSubscriptionsRetrieval_End" doc:id="af52d3fc-97e9-415f-a3aa-c919ab5335c6" config-ref="JSON_Logger_Config" message="AllUserSubscriptionsRetrieval End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="537adac2-8c81-4cef-8953-371aca39fa11" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="860db21a-e20d-4057-b60c-9066b7f656d1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="AllUser Subscription Retrieval Logger" doc:id="ccec2175-9d84-4cc8-b79e-80df9c7f6bb1" config-ref="JSON_Logger_Config" message="AllUser Subscription Retrieval Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-Subscription-idRetrievalFlow" doc:id="cc3b7051-045e-4908-9d96-1f4ddf816753" >
+		<json-logger:logger doc:name="UserSubscriptionIdRetrieval _Start" doc:id="558aeb66-b0db-4b5f-8152-e65fd38ab7a4" config-ref="JSON_Logger_Config" message="User Subscription IdRetrieval Start Logger"/>
+		<ee:transform doc:name="Cust-SubVariables" doc:id="fa066d4d-059a-4779-9e8e-9a62b8ce9ad3" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+				<ee:set-variable variableName="subsId" ><![CDATA[attributes.uriParams.'subscriptionId']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:select doc:name="userSubscriptionIdRetrieval" doc:id="9abc9592-4dd2-459e-b6d0-e9320d8bef96" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select b.status_type_name,concat_ws(" ",a.first_name,a.last_name)customerName,
+c.* from xxtrain_customer_details a, xxtrain_status_details b, xxtrain_subscription_details c
+where a.status_type_id = b.status_type_id and c.customer_id = :customerId and a.customer_id = c.customer_id
+and c.status_type_id = b.status_type_id and b.status_type_name = 'ACTIVE' and c.subscription_id = :subscriptionId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{"customerId": vars.custId, "subscriptionId": vars.subsId}]]]></db:input-parameters>
+		</db:select>
+		<json-logger:logger doc:name="UserSubscriptionIdRetrieval _AfterDB" doc:id="39715b35-3800-4cfd-95fc-23e3824eb2a3" config-ref="JSON_Logger_Config" message="UserSubscriptionIdRetrieval AfterDB" tracePoint="FLOW"/>
+		<ee:transform doc:name="FinalPayload" doc:id="4df2a50d-f2ac-4037-af15-d4d52d8c977d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	CustomerName: payload01.customerName,
+	SubscriptionId: payload01.subscription_id,
+	FromTime: payload01.from_time,
+	FromStation: payload01.from_station,
+	ToStation: payload01.to_station,
+	ToTime: payload01.to_time,
+	JourneyDate: payload01.journey_date,
+	ServiceType: payload01.service_type,
+	AdvanceNotifyTime: payload01.advance_notify_time,
+	AlertService: payload01.alert_service,
+	statusType: payload01.status_type_name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="UserSubscriptionIdRetrieval_End" doc:id="eda1f5e4-a0c8-40ea-b9cf-23629deb529f" config-ref="JSON_Logger_Config" message="UserSubscriptionIdRetrieval End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ed5202f5-5de8-46ec-bd26-0bbaa4e4dab6" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="b7475139-a092-4c4f-82fc-3c5afba08bdb" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="UserSubscription_IdRetrieval Logger" doc:id="03109208-a0a3-4baf-bd52-1a19ab893da9" config-ref="JSON_Logger_Config" message="User Subscription IdRetrieval Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-alert-notificationFlow" doc:id="88c6b8a1-2c5b-4c0d-a44b-307d895cead6" >
+		<json-logger:logger doc:name="UserAlertNotification_Start" doc:id="e986d78a-2310-4ca6-9a33-26de19cd25d5" config-ref="JSON_Logger_Config" message="UserAlertNotification Start Logger"/>
+		<ee:transform doc:name="ArraytoPayload" doc:id="bf2dcffb-6408-4e70-b279-514007a8d069" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[payload]]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="subsId" ><![CDATA[attributes.uriParams.'subscriptionId']]></ee:set-variable>
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="PayloadMapping" doc:id="5b0c9486-de69-4ab6-b599-355b7f085d81">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+payload map(payload01,index01) -> {
+	subscriptionId: vars.subsId,
+	customerId: vars.custId,
+	originLocation: payload01.originLocation,
+	destinationLocation: payload01.destinationLocation,
+	emailId: payload01.emailId,
+	serviceId: payload01.serviceId,
+	serviceType: payload01.serviceType,
+	delayStatus: payload01.delayStatus,
+	(delayTime: payload01.delayTime) if(payload01.delayTime != null),
+	(delayTime: 0) if(payload01.delayTime == null),
+	trainDelayReason: payload01.trainDelayReason
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+		<db:stored-procedure doc:name="AlertDetails_Procedure" doc:id="2e63346d-7298-413b-a28f-0976b758fa3d" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[{
+call createAlertDetails(:subscriptionId,:emailId,:originLocation,:destinationLocation,:serviceType,:serviceId,
+:delayStatus,:delayTime,:trainDelayReason,:alertId)
+}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/json
+---
+{
+	subscriptionId: vars.subsId,
+	emailId: payload[0].emailId,
+	originLocation: payload[0].originLocation,
+	destinationLocation: payload[0].destinationLocation,
+	serviceType: payload[0].serviceType,
+	serviceId: payload[0].serviceId,
+	delayStatus: payload[0].delayStatus,
+	delayTime: payload[0].delayTime,
+	trainDelayReason: payload[0].trainDelayReason
+}]]]></db:input-parameters>
+			<db:output-parameters >
+				<db:output-parameter key="alertId" type="INTEGER"/>
+			</db:output-parameters>
+		</db:stored-procedure>
+		<json-logger:logger doc:name="UserAlertNotification_AfterDB" doc:id="563062f5-495d-4132-a022-d57c01305add" config-ref="JSON_Logger_Config" message="UserAlertNotification AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="Transform Message" doc:id="b7b5c882-0634-43b0-ab46-889a42b2820f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+---
+{
+  description: "Success message",
+  message: "Alert tracking data added successfully",
+  alertId: payload.'alertId'
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="UserAlertNotification_End" doc:id="02ed7d8f-3f49-447a-9ece-c823e7c6824b" config-ref="JSON_Logger_Config" message="UserAlertNotification End ogger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="95f5660c-58c8-4e44-9a67-315ca098c60d" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="58247566-7e82-4eb8-8b73-6f6c1037fc88" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="UserAlert_Notification_Insertion Logger" doc:id="5b413518-706f-4a53-8a96-3e5c24e690f8" config-ref="JSON_Logger_Config" message="UserAlert Notification Insertion Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="allUser-alert-RetrievalFlow" doc:id="a561bc03-3239-4861-82a4-9116da2faa47" >
+		<json-logger:logger doc:name="allUserAlertRetrieval_Start" doc:id="b9f2f6e4-7ab5-403b-bd2f-8dc64a902c97" config-ref="JSON_Logger_Config" message="allUserAlertRetrieval Start Logger"/>
+		<ee:transform doc:name="Cust-SubsVariables" doc:id="7364d6eb-bb3b-4484-8d4c-3c9f3c39d8f6" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+				<ee:set-variable variableName="subsId" ><![CDATA[attributes.uriParams.'subscriptionId']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:select doc:name="allUserAlertRetrieval" doc:id="3066c8d8-daee-4aa6-aa43-3497883af44c" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select c.alert_id,b.customer_id, b.subscription_id,c.*
+from xxtrain_status_details a, xxtrain_subscription_details b, xxtrain_alert_details c
+where a.status_type_id = c.status_type_id and a.status_type_name = 'ACTIVE'
+and a.status_type_id = b.status_type_id
+and b.customer_id = :customerId and b.subscription_id = :subscriptionId and c.subscription_id = b.subscription_id
+and email_notify = 'No';]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{customerId: vars.custId, subscriptionId: vars.subsId}]]]></db:input-parameters>
+		</db:select>
+		<json-logger:logger doc:name="allUserAlertRetrieval_AfterDB" doc:id="637b654b-92ca-4eb6-90bf-ae76239c966f" config-ref="JSON_Logger_Config" message="allUserAlertRetrieval AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="FinalPayload" doc:id="cdcfeeff-c744-4ca2-881b-663234b2cd1f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="allUserAlertRetrieval_End" doc:id="55d018c9-2645-4205-ada2-2ff669f24ad5" config-ref="JSON_Logger_Config" message="allUserAlertRetrieval End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="296e6b9b-31e2-476d-b463-1d34a138f4da" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="e4e38cd3-83fe-4c0a-8de2-aa09410fd2df" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="allUser_Alert_Retrieval Logger" doc:id="1f2de33e-310d-4d07-bc43-ecf01b0aed67" config-ref="JSON_Logger_Config" message="AllAlert Details Retrieval Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-alertId-RetrievalFlow" doc:id="4d197913-0a5c-4ee7-b181-7d6e1ba1b3e7" >
+		<json-logger:logger doc:name="UserAlertIdRetrieval_Start" doc:id="12e1da2f-e2b8-48cb-abf0-e7603bcc2e38" config-ref="JSON_Logger_Config" message="UserAlertIdRetrieval Start Logger"/>
+		<ee:transform doc:name="alertVariables" doc:id="409802e0-a919-4648-9304-b68efc636654" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'custId']]></ee:set-variable>
+				<ee:set-variable variableName="subsId" ><![CDATA[attributes.uriParams.'subscriptionId']]></ee:set-variable>
+				<ee:set-variable variableName="alertId" ><![CDATA[attributes.uriParams.'alertId']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:select doc:name="UserAlertIdRetrieval" doc:id="1deb85a2-1fe4-45a0-bd5a-52be12588c85" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select b.status_type_name,concat_ws(" ",a.first_name,a.last_name)customerName,
+d.* from xxtrain_customer_details a, xxtrain_status_details b, xxtrain_subscription_details c, xxtrain_alert_details d
+where b.status_type_id = d.status_type_id and b.status_type_name = 'ACTIVE'
+and c.customer_id = :customerId and a.customer_id = c.customer_id
+and d.subscription_id = :subscriptionId and c.subscription_id = d.subscription_id
+and d.alert_id = :alertId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'customerId': vars.custId,
+	'subscriptionId': vars.subsId,
+	'alertId': vars.alertId
+}]]]></db:input-parameters>
+		</db:select>
+		<json-logger:logger doc:name="UserAlertIdRetrieval_AfterDB" doc:id="40cf89ba-a2aa-4a69-a6b8-14e0f3530eba" config-ref="JSON_Logger_Config" message="UserAlertIdRetrieval AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="FinalPayload" doc:id="0c9ab9b6-ca68-4d57-8fe5-c48414f72b91" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="UserAlertIdRetrieval_End" doc:id="cf58e78c-ea92-4a80-bf34-75a557a68360" config-ref="JSON_Logger_Config" message="UserAlertIdRetrieval End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="00c48c05-3ca5-4825-9089-5492cccb3d2f" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="74d9ceb3-d31e-487e-a9f3-3f27945b90a7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="userAlertId_Retrieval Logger" doc:id="b6dd404a-7fa0-4ad8-92e7-0ad8e9be95c7" config-ref="JSON_Logger_Config" message="userAlertId Retrieval Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-details-IdUpdateFlow" doc:id="f73b8b94-8c92-4039-9ac6-de724e20b0d3" >
+		<json-logger:logger doc:name="userDetailsUpdate_Start" doc:id="ecf24ca2-ef0f-44f3-a579-c327e307070b" config-ref="JSON_Logger_Config" message="userDetailsUpdate Start Logger"/>
+		<ee:transform doc:name="PayloadJson" doc:id="3ffc541b-d40f-4fc3-b3e1-69c5ce9f1ce0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="customer-updateExistingDetails" doc:id="15f60a68-a851-4e1c-8dea-cb72b3f42008" name="customer-updateExistingDetailsFlow" target="userpayload"/>
+		<ee:transform doc:name="UpdatePayload" doc:id="52c584c3-1a55-445e-8a63-b5586aa4b1f4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+ {
+	customerId: vars.'custId',
+	(firstName: payload.firstName) if(payload.firstName != null),
+	(firstName: vars.userpayload[0].'first_name') if(payload.firstName == null),
+	(lastName: payload.lastName) if(payload.lastName != null),
+	(lastName: vars.userpayload[0].'last_name') if(payload.lastName == null),
+	(statusTypeId: payload.statusTypeId as Number) if(payload.statusTypeId != null),
+	(statusTypeId: vars.userpayload[0].'status_type_id') 
+	     if(payload.statusTypeId == null),
+	(emailId: payload.emailId) if(payload.emailId != null),
+	(emailId: vars.userpayload[0].'email_id') if(payload.emailId == null),
+	(phoneNo: payload.phoneNo) if(payload.phoneNo != null),
+	(phoneNo: vars.userpayload[0].'phone_no') if(payload.phoneNo == null)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:update doc:name="userDetailsUpdate" doc:id="ef076b55-54a3-4528-9930-f97f1ac999ac" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[update xxtrain_customer_details set first_name = :firstName,last_name = :lastName,email_id = :emailId,
+ status_type_id = :statusTypeId, phone_no = :phoneNo, last_updated_date= current_timestamp(), last_updated_by = :customerId
+ where customer_id = :customerId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+		<json-logger:logger doc:name="userDetailsUpdate_AfterDB" doc:id="96f3cba9-7d0b-47fb-a9a7-ff2bb70e820a" config-ref="JSON_Logger_Config" message="userDetailsUpdate AfterDB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="OutputPayload" doc:id="4f59c4f5-b2c8-42dc-be16-b1d92d125f7d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	description: "Success",
+	message: "Customer Details Updated successfully!"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="userDetailsUpdate_End" doc:id="f02ccda8-f85d-4754-a3ab-177fd1c2dd17" config-ref="JSON_Logger_Config" message="userDetailsUpdate End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="dbc87f13-31a6-4236-84e3-71273aeaf481" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="a47958c0-4026-40e3-92e8-9457ccaecaf9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="userDetails_IdUpdate Logger" doc:id="031ddb89-973a-4d2d-bf1a-d6b26f565095" config-ref="JSON_Logger_Config" message="userDetails Id Update Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="customer-updateExistingDetailsFlow" doc:id="f0ce57e6-bb60-458b-998e-625786bd6d23" >
+		<db:select doc:name="existingDetails" doc:id="33742921-45ca-48e4-8c07-92fd7bf2ddd6" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select * from xxtrain_customer_details where customer_id = :customerId]]></db:sql>
+			<db:input-parameters ><![CDATA[#['customerId' : vars.'custId']]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="ec6d23ac-b328-4fbf-8a86-ff667c021ded" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="84f8a08f-9973-4186-81fd-bbb6f3c6a0e1" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="860a4e28-6a26-487c-a2f4-eb055399b5b4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="Customer Update Existing Details Logger" doc:id="c67b70b6-0a01-49e6-b1ef-d933d4d6d77d" config-ref="JSON_Logger_Config" message="Customer Update Existing Details Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="user-subscriptionUpdateFlow" doc:id="7303c8bb-90e2-44f5-9465-34be641e04ff" >
+		<json-logger:logger doc:name="UserSubscriptionUpdate_Start" doc:id="9d88bc13-cca0-4256-ba43-49a9cafa1961" config-ref="JSON_Logger_Config" message="UserSubscriptionUpdate Start Logger"/>
+		<ee:transform doc:name="JsonPayload" doc:id="fb4c7421-6917-4e39-be40-70cc8a51f2c3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+				<ee:set-variable variableName="subscriptionId" ><![CDATA[attributes.uriParams.'subscriptionId']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="UserSubscriptionUpdate" doc:id="7cf9972b-fdc0-463a-9d85-34e123338180" name="subscription-UpdateExistingDetails" target="subsPayload"/>
+		<ee:transform doc:name="UpdatePayload" doc:id="39c57b26-31ac-4128-a36b-56fa32363340" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	customerId: vars.'custId',
+	subscriptionId: vars.'subscriptionId',
+	(toStation: payload.toStation)  if(payload.toStation != null),
+	(fromTime: payload.fromTime) if(payload.fromTime != null),
+	(advanceNotifyTime: payload.advanceNotifyTime)
+	if(payload.advanceNotifyTime != null),
+	(journeyDate: payload.journeyDate) if(payload.journeyDate != null),
+	(alertService: payload.alertService) if(payload.alertService != null),
+	(fromStation: payload.fromStation) if(payload.fromStation != null),
+	(toTime: payload.toTime) if(payload.toTime != null),
+	(statusTypeId: payload.statusTypeId) if(payload.statusTypeId != null),
+	
+	(toStation: vars.subsPayload[0].to_station) if(payload.toStation == null),
+	(advanceNotifyTime: vars.subsPayload[0].advance_notify_time) 
+	if(payload.advanceNotifyTime == null),
+	(journeyDate: vars.subsPayload[0].journey_date) if(payload.journeyDate == null),
+	(alertService: vars.subsPayload[0].alert_service) if(payload.alertService == null),
+	(fromStation: vars.subsPayload[0].from_station) if(payload.fromStation == null),
+	(toTime: vars.subsPayload[0].to_time as String {format: "HH:mm:ss"}) if(payload.toTime == null),
+	(fromTime: vars.subsPayload[0].from_time as String {format: "HH:mm:ss"}) if(payload.fromTime == null),
+	(statusTypeId: vars.subsPayload[0].status_type_id) if(payload.statusTypeId == null)
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:update doc:name="UserSubscriptionUpdate" doc:id="85f2c9b3-d43f-4a78-bc89-888ed8ff7bec" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[update xxtrain_subscription_details set from_time = :fromTime, from_station = :fromStation, to_station = :toStation,
+to_time = :toTime, journey_date = :journeyDate, service_type = 'train', advance_notify_time = :advanceNotifyTime,
+status_type_id = :statusTypeId,
+alert_service = :alertService, last_updated_date= current_timestamp(), last_updated_by = :customerId
+ where customer_id = :customerId and subscription_id = :subscriptionId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+		<json-logger:logger doc:name="UserSubscriptionUpdate_AfterDB" doc:id="a523e740-54d4-422d-b07d-6a53b8b41450" config-ref="JSON_Logger_Config" message="UserSubscriptionUpdate AfterDB" tracePoint="FLOW"/>
+		<ee:transform doc:name="Output Payload" doc:id="1815360c-ef2e-4f86-a7ce-150c1754b70a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	description: "Success",
+	message: "Customer Subscription updated Successfully!"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="UserSubscriptionUpdate_End" doc:id="a6f6d163-1922-4707-a282-22a1375bcf4c" config-ref="JSON_Logger_Config" message="UserSubscriptionUpdate End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d1c070f8-847a-470f-80cd-d9c771e86614" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="1d6a316a-32d3-431a-92cc-42a403bc458a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="User_Subscription_UpdateLogger" doc:id="c8d068c9-ba48-436c-a61e-dbe9f6a635c4" config-ref="JSON_Logger_Config" message="User Subscription Update Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="subscription-UpdateExistingDetails" doc:id="c410d5b0-2cd6-41b7-af79-7aac15310281">
+		<db:select doc:name="subscription-UpdateExistingDetails" doc:id="86a83ccb-3e4e-464d-9afd-ea4e9f019cdd" config-ref="MysqlDatabase_Config">
+			<db:sql><![CDATA[select * from xxtrain_subscription_details 
+where customer_id = :customerId and subscription_id = :subscriptionId]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+ 'customerId': vars.'custId',
+ 'subscriptionId': vars.'subscriptionId'
+}]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="83864dfe-fd7f-40ba-a180-d1208fda31e4" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1dadb022-0428-4808-a1ee-a51c0f8a0428" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="9a1857a2-cecf-4fc5-9dea-ec6e28880123" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="SubscriptionExistingDetails_Logger" doc:id="1954207d-af62-4d33-82f6-a8c9a159ed2b" config-ref="JSON_Logger_Config" message="SubscriptionExistingDetails Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="alertEmail-UpdateFlow" doc:id="4020cb57-2645-492a-ba37-1c3d2f1587ba" >
+		<json-logger:logger doc:name="AlertEmailUpdate_Start" doc:id="973b510d-95cc-413a-b001-7dec31d2e4cf" config-ref="JSON_Logger_Config" message="AlertEmailUpdate Start Logger"/>
+		<ee:transform doc:name="URIVariables" doc:id="a6f267f8-db35-403c-9489-b150abc94280" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="custId" ><![CDATA[attributes.uriParams.'id']]></ee:set-variable>
+				<ee:set-variable variableName="subsId" ><![CDATA[attributes.uriParams.'subscriptionId']]></ee:set-variable>
+				<ee:set-variable variableName="alertId" ><![CDATA[attributes.uriParams.'alertId']]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<db:update doc:name="Update_EmailFlag" doc:id="49a4d602-0ffc-4bc2-bc73-cfbb16f800fe" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[update xxtrain_alert_details set email_notify = 'Yes', last_updated_date= current_timestamp(), last_updated_by = :customerId
+ where subscription_id = :subscriptionId and alert_id = :alertId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"subscriptionId": vars.subsId,
+	"alertId": vars.alertId,
+	"customerId": vars.custId
+}]]]></db:input-parameters>
+		</db:update>
+		<json-logger:logger doc:name="AlertEmailUpdate_AfterDB" doc:id="68fb94ef-78d1-4a02-88af-5296f0397d84" config-ref="JSON_Logger_Config" message="AlertEmailUpdate After DB Logger" tracePoint="FLOW"/>
+		<ee:transform doc:name="FinalPayload" doc:id="9f4523ac-8240-47c4-9d42-77010a1a02ca" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Description": "Email Flag Update",
+	"Message": "Flag Updated Successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="AlertEmailUpdate_End" doc:id="79b4e893-7c3e-4972-9519-d7846c850d4c" config-ref="JSON_Logger_Config" message="AlertEmailUpdate End Logger" tracePoint="END"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="bd8b224a-11c7-4943-842c-56d69907029c" type="DB:BAD_SQL_SYNTAX, DB:QUERY_EXECUTION, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<ee:transform doc:name="Error Description" doc:id="8f5ea426-4df1-402c-a83e-671bc4e54ca0" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="alertEmail_Update_Logger" doc:id="c8ca627c-ccb0-4bc0-a832-9bf2978ee99c" config-ref="JSON_Logger_Config" message="alertEmail Update Error Logs"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

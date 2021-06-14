@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<munit:config name="user-services-implementation-test-suite.xml" />
+	<munit:test name="USI-test-suite-user-registration-NotNullTest" doc:id="03266697-956d-41c7-ae58-5cc6a27c2c28" description="Test" timeOut="3000000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="934b19a4-39e4-4dd7-a010-a6b1a4a61e4f" processor="db:bulk-insert">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="CustomerRegistration" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="39d26f10-6f3d-43dc-a81f-2f33153b7a77" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;  {&#10;    "Message": "Success"&#10;  }&#10;]' mediaType="application/json" encoding="UTF-8" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="user-services-implementation-setEventFlow" doc:id="850e87cc-c512-4433-9a8b-cee63cc589e0" name="USI-Rego-setEventFlow"/>
+			<flow-ref doc:name="Flow-ref to user-registrationFlow" doc:id="2d25a23a-ddd1-424f-9440-039e206ba2c1" name="user-registrationFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="both-Assertthat" doc:id="13b1fa99-0ffc-4869-930a-0b14c4577f13" expression="#[payload]" is="#[MunitTools::both(MunitTools::notNullValue(),MunitTools::withMediaType('application/json'))]" message="Null Payload or wrong Media type been passed"/>
+		</munit:validation>
+	</munit:test>
+	<flow name="USI-Rego-setEventFlow" doc:id="1f01f729-71ee-480e-b73a-318b15ccc688" >
+		<munit:set-event doc:name="UserRegistration-SetEvent" doc:id="31330894-b716-44f5-b7e1-240e5667075c">
+				<munit:payload value='#[&#10;output application/json&#10;---&#10;  [{&#10;  "firstName": "User1",&#10;  "lastName": "UserLast1",&#10;  "emailId": "User1@gmail.com",&#10;  "phoneNo": "8765432599"&#10;  },&#10;  { &#10;  "firstName": "User2",&#10;  "lastName": "UserLast2",&#10;  "emailId": "User2@gmail.com",&#10;  "phoneNo": "8765432199"&#10; }]&#10;]' encoding="UTF-8" mediaType="application/json" />
+			</munit:set-event>
+	</flow>
+	<munit:test name="USI-test-suite-user-registration_MessageTest" doc:id="f887ffff-7813-4b5d-82d5-1e0153389a0f" description="Test" timeOut="30000000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="e3b127a5-91ae-4d70-ae66-8c30e9354f17" processor="db:bulk-insert">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="39d26f10-6f3d-43dc-a81f-2f33153b7a77" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;"description": "Success"&#10;]' />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="user-services-implementation-setEventFlow" doc:id="d1c662c3-0b00-4652-b898-f80b1d461169" name="USI-Rego-setEventFlow"/>
+			<flow-ref doc:name="Flow-ref to user-registrationFlow" doc:id="893303bd-78a5-4faa-9196-a42022a91053" name="user-registrationFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="equalsMessage-Assert that" doc:id="b9e470d9-0539-4cbe-941b-409e212ee9c8" message="Not the expected message" expression="#[payload.description]" is="#[MunitTools::equalToIgnoringCase('Success')]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-test-suite-allUser-details-retrieveTest" doc:id="10f25cb4-2456-4fdd-9559-34696d7c341b" description="Test" timeOut="1200000">
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to allUser-details-retrieveFlow" doc:id="4b5fe13b-099e-4408-831c-e230a996a9cc" name="allUser-details-retrieveFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="both-Assertthat" doc:id="06d9669d-b20d-462b-9fc8-bd12ad903b12" expression="#[payload]" is="#[MunitTools::both(MunitTools::notNullValue(),MunitTools::withMediaType('application/json'))]" message="Null Payload or wrong Media type been passed "/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-test-suite-subscriptionRego-NotNullTest" doc:id="a33444e0-f837-4e68-b5b5-b19a22ec9116" description="Test" timeOut="1200000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="cf27552a-6415-4416-b584-e87826d76290" processor="db:bulk-insert">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="abcc6fcb-9c27-4d1c-8edf-0884d1cb2ef3" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;"Message": "Inserted Successfully"&#10;]' />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="500ecbc5-0028-4ebe-97e3-4bed0d29d95a" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="USI-SubRego-setEventFlow" doc:id="71ff15aa-dced-471d-a41e-fd811744108b" name="USI-SubRego-setEventFlow"/>
+			<flow-ref doc:name="Flow-ref to user-subscriptionFlow" doc:id="6400376f-aca7-46f1-bfdf-fca5e7c543e0" name="user-subscriptionFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="either-Assertthat" doc:id="7841070a-7733-498f-89b4-f8c597e9dbe5" is="#[MunitTools::either(MunitTools::notNullValue(),MunitTools::withMediaType('application/json'))]" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<flow name="USI-SubRego-setEventFlow" doc:id="48532ff4-26ff-4519-9ccb-a618eb56f404" >
+		<munit:set-event doc:name="SubscriptionReg-SetEvent" doc:id="91884753-338b-4d3c-886d-281e883c932b" >
+			<munit:payload value='#[&#10;output application/json&#10;---&#10; [{&#10;    "fromTime": "10:40:00",&#10;    "fromStation": "LBG",&#10;    "toStation": "CST",&#10;    "toTime": "12:07:00",&#10;    "journeyDate": "2021-05-21",&#10;   "advanceNotifyTime": 60&#10; },&#10; {&#10;    "fromTime": "06:40:00",&#10;    "fromStation": "BSK",&#10;    "toStation": "RDG",&#10;    "toTime": "08:17:00",&#10;    "journeyDate": "2021-05-21",&#10;    "advanceNotifyTime": 60,&#10;    "alertService": "Yes"&#10; }]&#10;]' />
+			<munit:attributes value="#[attributes]" />
+		</munit:set-event>
+	</flow>
+	<munit:test name="USI-userSubscription-MessageEqualsTest" doc:id="daab5ff0-6421-4246-96df-132943ab8b26" description="Test" timeOut="1200000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="e966e247-abda-4319-a205-f84d070fc01a" processor="db:bulk-insert">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="abcc6fcb-9c27-4d1c-8edf-0884d1cb2ef3" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;{&#10;"description": "Success"&#10;}&#10;]' />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="USI-SubRego-setEventFlow" doc:id="9ecec5bb-296b-4c9f-9557-4d78aa89e724" name="USI-SubRego-setEventFlow"/>
+			<flow-ref doc:name="Flow-ref to user-subscriptionFlow" doc:id="965a6c48-ece4-498a-b4a4-6cd96560a816" name="user-subscriptionFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Description-Assertequals" doc:id="6693a20a-cfad-411d-87f6-4bc12e2db4da" actual="#[payload.Description]" expected='Success Message' message="Expected Result"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-user-id-retrievalNotNullTest" doc:id="4ec95e4c-3675-4e81-81ad-bdfdf9ea1398" description="Test">
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="ab760b41-8355-46a9-890e-a9cab762cf5f" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="Flow-ref to user-id-retrievalFlow" doc:id="f66fcf3e-3254-410e-a0e7-73884ee300d7" name="user-id-retrievalFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Notnull-Assertthat" doc:id="ef539c1f-0c5c-429e-9726-7c11c57c0ed0" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="No record found"/>
+		</munit:validation>
+	</munit:test>
+	<flow name="USI-setVariablesTest" doc:id="efe15800-5df9-4d9d-9d8d-b79c0fd0747d" >
+		<munit:set-event doc:name="variables-SetEvent" doc:id="0ded5694-f0ef-404d-a138-66d0dd201767">
+			<munit:attributes value="#[&#10;{&#10;uriParams : &#10;{&#10;'id' : 1,&#10;'subscriptionId' : 2,&#10;'alertId' : 9&#10;}&#10;}]" />
+			</munit:set-event>
+	</flow>
+	<munit:test name="USI-allUserSubscriptions-RetrievalTest" doc:id="16be7632-5325-4732-98c0-567f7a07b473" description="Test" timeOut="1200000">
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="a1e20423-1a33-41ca-9b26-2efc0a7c11e8" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="Flow-ref to allUserSubscriptions-RetrievalFlow" doc:id="64741d17-cd51-4a04-bb29-cb609c3ce29f" name="allUserSubscriptions-RetrievalFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="NotNull-Assertthat" doc:id="17e354d2-20ce-4c2d-bd49-6a957b00dee3" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="No record found"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-user-Subscription-idRetrievalTest" doc:id="bae15443-2f2d-4ce7-a7aa-5612d07f1887" description="Test" timeOut="1200000">
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="236808c2-ba6d-48d0-a9fa-ed136ffb0097" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="Flow-ref to user-Subscription-idRetrievalFlow" doc:id="abd0617e-7822-4617-abed-faa716156de1" name="user-Subscription-idRetrievalFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="NotNull-Assertthat" doc:id="2a44cb3a-07d1-458d-ac75-0bc95df7f623" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="No records found"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-user-alert-notificationRegoTest" doc:id="24f7c0bb-6b44-4956-a1e8-2773e0ed7045" description="Test" timeOut="1200000">
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="f0946349-24fa-481f-8179-eb635abdb147" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="USI-alertRegoTest" doc:id="7aa02533-7332-48fc-bd40-ec2deb157bb7" name="USI-alertRegoTest"/>
+			<flow-ref doc:name="Flow-ref to user-alert-notificationFlow" doc:id="ae74ec8d-8755-43db-9d48-ea0dd64ef0af" name="user-alert-notificationFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="notNull-Assertthat" doc:id="7ecea36c-98bd-41ea-8ef3-a8e1cbd51eec" is="#[MunitTools::notNullValue()]" message="No Records found" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<flow name="USI-alertRegoTest" doc:id="1d54d05e-cc03-48df-b2ad-5ed89dcee8ed" >
+		<munit:set-event doc:name="alertRego-Payload" doc:id="639c0996-8ed8-42ab-935c-6b804e5afcca" >
+			<munit:payload value='#[&#10;output application/json&#10;---&#10;{&#10;    "originLocation": "LBG",&#10;    "destinationLocation": "CST",&#10;    "emailId": "lahari93@gmail.com",&#10;    "serviceType": "train",&#10;    "serviceId": "abc",&#10;    "delayStatus":"Delayed",&#10;    "delayTime": 3,&#10;    "trainDelayReason": "Train breakdown"&#10;}&#10;]' encoding="UTF-8" mediaType="application/json" />
+			<munit:attributes value="#[attributes]" />
+		</munit:set-event>
+	</flow>
+	<munit:test name="USI-allUser-alert-RetrievalTest" doc:id="4b7e5263-8b5d-4293-827c-90cf6ef00b42" description="Test" timeOut="1200000">
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="28d4425f-84a5-4eed-965e-a7e0d8865bc8" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="Flow-ref to allUser-alert-RetrievalFlow" doc:id="213d72c2-441d-4636-9210-ebc39d07697d" name="allUser-alert-RetrievalFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="notNullValue-Assertthat" doc:id="93ba6e7a-ddb6-40da-b9c3-b7e85f87c996" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="No Records found"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-user-alertId-RetrievalTest" doc:id="f3908a3f-b1e3-4f03-b9eb-4b063fa7d4d1" description="Test" timeOut="1200000">
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="e9be1515-de3d-488a-9b03-27ad9558bfd4" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="Flow-ref to user-alertId-RetrievalFlow" doc:id="8f750456-6ac1-430e-8594-ee58bbe4c454" name="user-alertId-RetrievalFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="notNull-Assert that" doc:id="33bf6c25-3666-4d37-825d-9b28dc78d33e" expression="#[payload]" is="#[MunitTools::notNullValue()]" message="No records found"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="USI-user-details-IdUpdateTest" doc:id="631adafa-e15c-45b2-a398-96106180db02" description="Test" timeOut="1200000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="053d8092-7c20-4d1f-bfd3-b3788c109410" processor="db:update">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="ef076b55-54a3-4528-9930-f97f1ac999ac" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;{&#10;"message": "Updated Successfully"&#10;}&#10;]' />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="5ade8707-1b60-4921-a48d-ac0eff1d1a81" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="USI-custUpdateSetEventTest" doc:id="04b5f677-584d-4360-8bf5-969dbc595da9" name="USI-custUpdateSetEventTest"/>
+			<flow-ref doc:name="Flow-ref to user-details-IdUpdateFlow" doc:id="c2c86364-cb48-40e8-b1d0-55321ccb09ba" name="user-details-IdUpdateFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="both-Assertthat" doc:id="ce66c725-c531-44a1-b0ec-a25b4b47009d" is="#[MunitTools::both(MunitTools::notNullValue(),MunitTools::equalToIgnoringCase('Success'))]" expression="#[payload.description]" message="Customer Details not Updated successfully"/>
+		</munit:validation>
+	</munit:test>
+	<flow name="USI-custUpdateSetEventTest" doc:id="e9218b15-2f8b-4823-bd3b-2d98320006f2" >
+		<munit:set-event doc:name="CustUpdate-SetEvent" doc:id="0f735d0c-89c2-40c1-a1df-626c345abda7" >
+			<munit:payload value='#[&#10;output application/json&#10;---&#10;{&#10;  "firstName": "User4"&#10;}&#10;]' />
+			<munit:attributes value="#[attributes]" />
+		</munit:set-event>
+	</flow>
+	<munit:test name="USI-user-subscriptionUpdateTest" doc:id="d02f5103-682a-4446-9a47-31237154decb" description="Test" timeOut="1200000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="dd58128d-778c-4340-865d-467835283d46" processor="db:update">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="85f2c9b3-d43f-4a78-bc89-888ed8ff7bec" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;{&#10;"message": "Subscription Details Updated Successfully"&#10;}&#10;]' />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="26ae541b-fb04-4bf4-8368-5189dbb1ebad" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="USI-subsUpdate-SetEventTest" doc:id="f78ab731-5497-4021-9329-63919f7358ee" name="USI-subsUpdate-SetEventTest"/>
+			<flow-ref doc:name="Flow-ref to user-subscriptionUpdateFlow" doc:id="87cc951f-3d16-497a-8d7f-bed01c9da9f7" name="user-subscriptionUpdateFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="anyOfCheck-Assertthat" doc:id="3b4ae0b8-3dce-4704-b6bf-6b3271b5de86" expression="#[payload.description]" is="#[MunitTools::anyOf([MunitTools::notNullValue(),MunitTools::withMediaType('application/json'),MunitTools::equalToIgnoringCase('Success')])]" message="Subscription Details not Updated Successfully"/>
+		</munit:validation>
+	</munit:test>
+	<flow name="USI-subsUpdate-SetEventTest" doc:id="f321b9b6-0e0d-4a4b-8036-a5921999c101" >
+		<munit:set-event doc:name="SubscriptionUpdate-SetEvent" doc:id="a60e812c-e49a-4c25-ae02-ca9d423310b0" >
+			<munit:payload value='#[&#10;output application/json&#10;---&#10;{&#10;"journeyDate": "2021-06-08"&#10;}&#10;]' />
+			<munit:attributes value="#[attributes]" />
+		</munit:set-event>
+	</flow>
+	<munit:test name="USI-alertEmail-UpdateTest" doc:id="2d6cfc1f-c40f-4fc4-b011-523685453bbd" description="Test" timeOut="1200000">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="2c8ac0f0-d2a9-4c73-8d83-37d72e56817b" processor="db:update">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="49a4d602-0ffc-4bc2-bc73-cfbb16f800fe" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[&#10;output application/json&#10;---&#10;{&#10;"message": "Email Flag updated"&#10;}&#10;]' />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="USI-setVariablesTest" doc:id="1f8ef43d-1e17-4456-8583-84707c07b5a9" name="USI-setVariablesTest"/>
+			<flow-ref doc:name="Flow-ref to alertEmail-UpdateFlow" doc:id="307d2452-fa66-4396-9e39-eaf185eb9dca" name="alertEmail-UpdateFlow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="message-Assertequals" doc:id="41d23aa7-d48c-40ec-bcf1-72d25facbe31" actual="#[payload.Message]" expected="Flag Updated Successfully" message="Expected Output"/>
+		</munit:validation>
+	</munit:test>
+
+</mule>

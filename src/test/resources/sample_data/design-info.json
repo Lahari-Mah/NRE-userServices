@@ -1,0 +1,14 @@
+{
+  "sampleData": {
+    "fbee780e-14f0-416d-8588-a53317397872": {
+      "payload": "sample_data/list_java.dwl"
+    },
+    "89bb417c-fd47-441c-ae64-73f2517777e4": {
+      "payload": "sample_data/list_java_1.dwl"
+    },
+    "ab6be113-7c7e-4a61-b58e-997c542f3702": {
+      "payload": "sample_data/defaultstringtype.dwl",
+      "vars-id": "sample_data/defaultstringtype_1.dwl"
+    }
+  }
+}

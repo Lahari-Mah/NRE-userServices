@@ -1,0 +1,257 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="customerType" format="json">
+      <types:shape format="weave" example="examples/subscriptionType-1.json"><![CDATA[%dw 2.0
+
+type customerType = Array<{|  fromTime: String,   fromStation: String,   toStation: String,   toTime: String,   journeyDate: String,   advanceNotifyTime: Number {"typeId": "int"},   alertService: String|}> {"example": "[{\\\"fromTime\\\":\\\"10:40:00\\\",\\\"fromStation\\\":\\\"LBG\\\",\\\"toStation\\\":\\\"CST\\\",\\\"toTime\\\":\\\"12:07:00\\\",\\\"journeyDate\\\":\\\"2021-05-21\\\",\\\"advanceNotifyTime\\\":60},{\\\"fromTime\\\":\\\"06:40:00\\\",\\\"fromStation\\\":\\\"BSK\\\",\\\"toStation\\\":\\\"RDG\\\",\\\"toTime\\\":\\\"08:17:00\\\",\\\"journeyDate\\\":\\\"2021-05-21\\\",\\\"advanceNotifyTime\\\":60,\\\"alertService\\\":\\\"Yes\\\"}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="subscriptionId" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="cuatomerId" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="alertType" format="json">
+      <types:shape format="weave" example="examples/alertType-1.json"><![CDATA[%dw 2.0
+
+type alertType = Array<{|  originLocation: String,   destinationLocation: String,   serviceType: String,   serviceId: String,   delayStatus: String,   delayTime: Number {"typeId": "int"},   trainDelayReason: String|}> {"example": "[{\\\"originLocation\\\":\\\"\u201CLBG\u201D\\\",\\\"destinationLocation\\\":\\\"\u201CCST\u201D\\\",\\\"serviceType\\\":\\\"\u201Ctrain\u201D\\\",\\\"serviceId\\\":\\\"\u201Cabc\u201D\\\",\\\"delayStatus\\\":\\\"\u201DDelayed\u201D\\\",\\\"delayTime\\\":3,\\\"trainDelayReason\\\":\\\"\u201CTrainbreakdown\u201D\\\"}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="alertId" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: number]]></types:shape>
+    </types:type>
+    <types:type name="customerIdType" format="json">
+      <types:shape format="weave" example="examples/customerIdType-1.json"><![CDATA[%dw 2.0
+
+type customerIdType = {|
+  firstName: String, 
+  lastName: String, 
+  emailId: String, 
+  phoneNo: String, 
+  "“statusTypeId”": Number {"typeId": "int"}
+|} {"example": "{\\\"firstName\\\":\\\"User1\\\",\\\"lastName\\\":\\\"UserLast1\\\",\\\"emailId\\\":\\\"User1@gmail.com\\\",\\\"phoneNo\\\":\\\"8765432599\\\",\\\"\u201CstatusTypeId\u201D\\\":1}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="customerDetailsType" format="json">
+      <types:shape format="weave" example="examples/customerDetailsType-1.json"><![CDATA[%dw 2.0
+
+type customerDetailsType = Array<{|  firstName: String,   lastName: String,   emailId: String,   phoneNo: String,   statusTypeId: Number {"typeId": "int"}|}> {"example": "[{\\\"firstName\\\":\\\"User1\\\",\\\"lastName\\\":\\\"UserLast1\\\",\\\"emailId\\\":\\\"User1@gmail.com\\\",\\\"phoneNo\\\":\\\"8765432599\\\",\\\"statusTypeId\\\":1},{\\\"firstName\\\":\\\"User1\\\",\\\"lastName\\\":\\\"UserLast1\\\",\\\"emailId\\\":\\\"User1@gmail.com\\\",\\\"phoneNo\\\":\\\"8765432599\\\",\\\"statusTypeId\\\":1}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#fa066d4d-059a-4779-9e8e-9a62b8ce9ad3">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerType"/>
+          <types:attributes type="subscriptionId"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#538624fc-656c-4567-be6c-8e22091c5117">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerType"/>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#304e2925-7516-4f5a-a679-3a27e401b0bf">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#0293778b-6743-43f7-9a3b-8ab8c11d2e20">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerType"/>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#5b0c9486-de69-4ab6-b599-355b7f085d81">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="alertType"/>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="subsId" type="subscriptionId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#b7b5c882-0634-43b0-ab46-889a42b2820f">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="alertId"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#7364d6eb-bb3b-4484-8d4c-3c9f3c39d8f6">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="alertType"/>
+          <types:attributes type="subscriptionId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="subsId" type="subscriptionId"/>
+          <types:variable name="custId" type="cuatomerId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#409802e0-a919-4648-9304-b68efc636654">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="alertType"/>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="subsId" type="subscriptionId"/>
+          <types:variable name="custId" type="cuatomerId"/>
+          <types:variable name="alertId" type="alertId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#3ffc541b-d40f-4fc3-b3e1-69c5ce9f1ce0">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerIdType"/>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="custId" type="cuatomerId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#fb4c7421-6917-4e39-be40-70cc8a51f2c3">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerType"/>
+          <types:attributes type="subscriptionId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="custId" type="cuatomerId"/>
+          <types:variable name="subscriptionId" type="subscriptionId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#b8f37514-a15d-43ec-89ac-a30c2f8023c6">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="custId" type="cuatomerId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#bf2dcffb-6408-4e70-b279-514007a8d069">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="alertType"/>
+          <types:attributes type="subscriptionId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="subsId" type="subscriptionId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#a6f267f8-db35-403c-9489-b150abc94280">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="alertType"/>
+          <types:attributes type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="subsId" type="subscriptionId"/>
+          <types:variable name="custId" type="cuatomerId"/>
+          <types:variable name="alertId" type="alertId"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#1758ba9e-3fef-4f47-84a1-0cca54cc7677">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerDetailsType"/>
+          <types:attributes type="customerIdType"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="customerDetailsType"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#48f3241a-b74f-4399-b4cc-3e38ced5af93">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="cuatomerId"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#0eeaa9da-5c9d-4a2d-af5c-076cac42c64f">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="customerDetailsType"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

@@ -1,0 +1,189 @@
+#%RAML 1.0
+title: National Railway Train Services API
+
+uses:
+  custlib: /exchange_modules/eb566cbb-279c-4a2f-bb62-950b9648e62f/customer-library/1.0.10/customer-library.raml
+
+traits:
+  client-id-required: !include /exchange_modules/eb566cbb-279c-4a2f-bb62-950b9648e62f/customer-trait/1.0.2/customer-trait.raml
+
+/customers:
+  get:
+    description: Retrieve the customer details from the system
+    responses:
+      200:
+        body:
+          application/json:
+            type: custlib.CustomerType
+            examples:
+              output: !include /Examples/customerExample.raml
+      400:
+        body:
+          application/json:
+            example:
+              description: Error message
+              message: Error in retrieving data, Please check through!
+  post:
+    description: Create a customer
+    body:
+      application/json:
+        description: Customer created with respective details
+        type: custlib.CustomerType
+        examples:
+          input: !include /Examples/customerNoIDExample.raml
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              description: Success Message
+              message: Customer Registered Successfully!
+      400:
+        body:
+          application/json:
+            example:
+              description: Error Message
+              message: Error in inserting data, Please check through!
+  /{id}:
+    get:
+      description: Retrieve customer details by ID
+      responses:
+        200:
+          body:
+            application/json:
+              type: custlib.CustomerIdType
+              examples:
+                output: !include /Examples/customerByIdExample.raml
+        400:
+          body:
+            application/json:
+              example:
+                description: Error Message
+                message: Error in retrieving customer details by ID
+    patch:
+      description: Update Customer details by ID
+      body:
+        application/json:
+          type: custlib.CustomerIdType
+          examples:
+            input: !include /Examples/customerByIdExample.raml
+    
+    /subscriptions:
+      get:
+        description: Retrieve all subscriptions of customers
+        responses:
+          200:
+            body:
+             application/json:
+              type: custlib.SubscriptionType
+              examples:
+                output: !include /Examples/subscriptionExample.raml
+          400:
+           body:
+            application/json:
+              example:
+                description: Error Message
+                message: Error in retrieving customer subscriptions 
+      post:
+        description: Create subscription for each customer
+        body:
+          application/json:
+            type: custlib.SubscriptionType
+            examples:
+              input: !include /Examples/subscriptionNoIDExample.raml
+        responses:
+          200:
+            body:
+              application/json:
+                example:
+                 description: Success message
+                 message: Subscription added successfully 
+          400:
+            body:
+              application/json:
+                example:
+                  description: Error message
+                  message: Error in creating subscription data, Please check through!
+      /{subscriptionId}:
+        get:
+          description: Retrieving each subscription data
+          responses:
+            200:
+              body:
+                application/json:
+                  type: custlib.SubscriptionIdType
+                  examples:
+                    output: !include /Examples/subscriptionByIdExample.raml
+            400:
+              body:
+                application/json:
+                  example:
+                    description: Error Message
+                    message: Error in retrieving specific subscription data
+        patch:
+          description: Update Subscription details by ID
+          body:
+            application/json:
+              type: custlib.SubscriptionIdType
+              examples:
+                input: !include /Examples/subscriptionByIdExample.raml
+
+        /alerts:
+          get:
+            description: Retrieve all alert notifications data under particular subscription
+            responses:
+              200:
+                body:
+                  application/json:
+                    type: custlib.AlertType
+                    examples:
+                      output: !include /Examples/alertsExample.raml
+              400:
+                body:
+                  application/json:
+                    example:
+                      description: Error Message
+                      message: Error in retrieving alert data for each subscription 
+          post:
+            description: Create new alert
+            body:
+              application/json:
+                type: custlib.AlertType
+                examples:
+                  input: !include /Examples/alertNoIdExample.raml
+            responses:
+              201:
+               body:
+                 application/json:
+                   example:
+                     description: Success message
+                     message: Alert tracking data added successfully 
+              400:
+                body:
+                  application/json:
+                    example:
+                      description: Error message
+                      message: Error in creating alert notiifications data, Please check through!
+          /{alertId}:
+            get:
+              description: Retrieve specific alert notification data
+              responses:
+                200:
+                  body:
+                    application/json:
+                      type: custlib.AlertIdType
+                      examples:
+                        output: !include /Examples/alertByIdExample.raml
+                400:
+                  body:
+                    application/json:
+                      example:
+                        description: Error Message
+                        message: Error in retrieving specific alert data
+            patch:
+              description: Update Alert details by ID
+              body:
+                application/json:
+                  type: custlib.AlertIdType
+                  examples:
+                    input: !include /Examples/alertByIdExample.raml

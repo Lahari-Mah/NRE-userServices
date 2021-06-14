@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:nationalrailway-servicenow-sapi="http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi/current/mule-nationalrailway-servicenow-sapi.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="MysqlDatabase_Config" doc:name="Database Config" doc:id="3c3f0890-614d-4e96-af2d-a288ed5f71e3" >
+		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.username}" password="${secure::database.password}" database="${database.schema}" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="1b70c74f-2ad2-4086-a334-050fa669cbc5" file="config.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="9244dc2b-248a-4a0c-a590-024a30c2cb71" file="config.yaml" key="dbpass" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="6f741239-4823-4f46-bc91-7de5588dcdd4" file="log.properties" />
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="6e475885-d34c-491f-980f-9a2514d4527c" environment="${mule.env}" />
+	<http:listener-config name="user-services-sapi-HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="bfb095c2-4113-471d-b5fc-b14642fdf504" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<nationalrailway-servicenow-sapi:config name="Nationalrailway_servicenow_sapi_Config" doc:name="Nationalrailway-servicenow-sapi Config" doc:id="eb7831f7-2055-4c61-b4f3-75a51f1a1ed9" property_host="${serviceNow.host}" property_port="${serviceNow.port}" property_protocol="${serviceNow.protocol}" property_basePath="/api" property_responseTimeout="3000000"/>
+	<configuration doc:name="Configuration" doc:id="c9a089c1-8bfa-4ded-9d19-7861d09ed242" defaultErrorHandler-ref="globalError_Handler" />
+	<error-handler name="globalError_Handler" doc:id="d1ef84fd-e6bc-4472-a64c-73fdd13b6202" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fe06511c-2d93-4255-b5e3-7da3a371463e" type="HTTP:INTERNAL_SERVER_ERROR,DB:CONNECTIVITY,DB:RETRY_EXHAUSTED">
+				<try doc:name="Try" doc:id="f7a238da-fed4-4f13-bda2-d0f7bca6a9e6">
+					<ee:transform doc:name="IncidentPayload" doc:id="f3ba2fb5-5c7b-4e49-8153-ebb800002764" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"short_description": error.detailedDescription,
+	"state": "New",
+	"comments":
+	   "Error Type: " ++ (error.errorType.identifier default '') ++ "\n" 
+	   ++ "Error Location: " ++ (error.failingComponent default ''),
+	"caller_id": "System Administrator"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<nationalrailway-servicenow-sapi:create-incident doc:name="Create incident" doc:id="e46bc082-5c36-4668-b740-62baea9bbbdb" config-ref="Nationalrailway_servicenow_sapi_Config" />
+					<raise-error doc:name="APP:SERVER_CONNECTIVITY" doc:id="84e4e839-f740-4156-b784-0118157faad0" type="APP:SERVER_CONNECTIVITY" description='Internal Server Error' />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ec28a510-d142-45d9-981b-5ace3726f1b3" type="APP:SERVER_CONNECTIVITY">
+						<ee:transform doc:name="ErrorDescription" doc:id="48f3241a-b74f-4399-b4cc-3e38ced5af93" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Description": payload.ErrorDescription,
+	"Incident No": payload.number
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<json-logger:logger doc:name="ServiceNow_UserDetails_Logger" doc:id="a3a93fb9-9cf3-4ddc-abfb-b2082df60ceb" config-ref="JSON_Logger_Config" message="ServiceNow User Details Logs"/>
+					</on-error-continue>
+				</error-handler>
+				</try>
+			</on-error-propagate>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="dd3cd202-1927-419a-923a-0f11a77d9418" type="ANY">
+			<ee:transform doc:name="Error Message" doc:id="ec42b1ba-95c4-49b2-9040-56726fe03af6" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="Global_ErrorLogger" doc:id="1bf86b41-63bd-4802-ab90-e150b1f53d5a" config-ref="JSON_Logger_Config" message="Global ErrorLogger" priority="ERROR"/>
+		</on-error-continue>
+	</error-handler>
+</mule>

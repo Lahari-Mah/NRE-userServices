@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <apikit:config name="user-services-sapi-config" api="user-services-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="user-services-sapi-main">
+        <http:listener config-ref="user-services-sapi-HTTP_Listener_config" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="user-services-sapi-config" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d355d176-0170-48ea-bb73-67dc29b5f4aa" type="APIKIT:BAD_REQUEST">
+				<ee:transform doc:name="Transform Message" doc:id="cb10b516-6c98-4333-a456-5165c783808b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Bad Request"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d81d381b-644f-4766-9fb0-f08ce0893cbb" type="APIKIT:METHOD_NOT_ALLOWED">
+				<ee:transform doc:name="Transform Message" doc:id="a7c2609b-31cf-4438-a6e3-c1b943c2aab9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Method Not Allowed"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6b209c57-c221-4a48-9f34-92db15bb7985" type="APIKIT:NOT_ACCEPTABLE">
+				<ee:transform doc:name="Transform Message" doc:id="755b741c-5164-4db5-93a8-4056a0b140a9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Not Acceptable"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ae921b0e-c8fd-4250-925b-3906463d50b8" type="APIKIT:NOT_FOUND">
+				<ee:transform doc:name="Transform Message" doc:id="b855412c-57e2-4f11-b57a-32960344e70f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Not Found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0cbd5839-bf0d-47ef-b8f1-737d4599c001" type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+				<ee:transform doc:name="Transform Message" doc:id="6c378bba-3bd6-409a-b79f-f20b07724803" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Unsupported Media Type"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fb2d9084-43c1-4e5b-9215-8fd4070ee8b8" type="APIKIT:NOT_IMPLEMENTED">
+				<ee:transform doc:name="Transform Message" doc:id="9840f1d5-53ab-44ea-97ff-f13e5bba98af" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Not Implemented"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="user-services-sapi-console">
+        <http:listener config-ref="user-services-sapi-HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="user-services-sapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="patch:\customers\(id)\subscriptions\(subscriptionId)\alerts\(alertId):application\json:user-services-sapi-config">
+        <flow-ref doc:name="alertEmail-UpdateFlow" doc:id="205a6223-e704-453a-a952-4148ffe1e467" name="alertEmail-UpdateFlow"/>
+    </flow>
+    <flow name="patch:\customers\(id):application\json:user-services-sapi-config">
+        <flow-ref doc:name="user-details-IdUpdate" doc:id="ebed8d6f-f41e-4f32-890f-0a6409991c54" name="user-details-IdUpdateFlow" />
+    </flow>
+    <flow name="patch:\customers\(id)\subscriptions\(subscriptionId):application\json:user-services-sapi-config">
+        <flow-ref doc:name="user-subscriptionUpdateFlow" doc:id="eca7449e-b506-4192-bafc-8a68e5e473e7" name="user-subscriptionUpdateFlow" />
+    </flow>
+    <flow name="get:\customers\(id)\subscriptions\(subscriptionId)\alerts:user-services-sapi-config">
+        <flow-ref doc:name="allUser-alert-RetrievalFlow" doc:id="6df455d8-c169-43d6-919a-54fb96b40406" name="allUser-alert-RetrievalFlow"/>
+    </flow>
+    <flow name="get:\customers:user-services-sapi-config">
+        <flow-ref doc:name="allUser-details-retrieveFlow" doc:id="2d760b13-7097-4d44-b7c4-28a0b041b48f" name="allUser-details-retrieveFlow" />
+    </flow>
+    <flow name="get:\customers\(id)\subscriptions:user-services-sapi-config">
+        <flow-ref doc:name="allUserSubscriptions-Retrieval" doc:id="32e96d1a-1177-43ac-930b-2770cc5ebb65" name="allUserSubscriptions-RetrievalFlow" />
+    </flow>
+    <flow name="get:\customers\(id)\subscriptions\(subscriptionId)\alerts\(alertId):user-services-sapi-config">
+        <flow-ref doc:name="user-alertId-RetrievalFlow" doc:id="5455fb7d-b12b-4663-9e56-b7837559dd69" name="user-alertId-RetrievalFlow"/>
+    </flow>
+    <flow name="get:\customers\(id):user-services-sapi-config">
+        <flow-ref doc:name="user-id-retrievalFlow" doc:id="7f88f5a0-a756-4ee4-8f8a-9ac2d477c01f" name="user-id-retrievalFlow" />
+    </flow>
+    <flow name="get:\customers\(id)\subscriptions\(subscriptionId):user-services-sapi-config">
+        <flow-ref doc:name="user-Subscription-idRetrieval" doc:id="b4925689-731b-4d0a-9b03-ce85272908af" name="user-Subscription-idRetrievalFlow" />
+    </flow>
+    <flow name="post:\customers\(id)\subscriptions\(subscriptionId)\alerts:application\json:user-services-sapi-config">
+        <flow-ref doc:name="user-alert-notificationFlow" doc:id="cc9b94d4-6b6e-4732-8d71-20cbd3fbc349" name="user-alert-notificationFlow"/>
+    </flow>
+    <flow name="post:\customers:application\json:user-services-sapi-config">
+        <flow-ref doc:name="user-registrationFlow" doc:id="e062b9f8-f148-409f-b79f-b136d2bfcd73" name="user-registrationFlow" />
+    </flow>
+    <flow name="post:\customers\(id)\subscriptions:application\json:user-services-sapi-config">
+        <flow-ref doc:name="user-subscriptionFlow" doc:id="d6c7e7e8-32c5-4e4b-8396-4669966fb059" name="user-subscriptionFlow" />
+    </flow>
+</mule>
