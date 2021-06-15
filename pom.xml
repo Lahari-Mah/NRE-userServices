@@ -43,7 +43,7 @@
                   <password>Mah@987654321</password>
                   <environment>Sandbox</environment>
                   <workers>1</workers>
-                  <applicationName>NRE-userServices</applicationName>
+                  <applicationName>NRE-userDetServices</applicationName>
                   <muleVersion>4.3.0</muleVersion>
                   <objectStoreV2>true</objectStoreV2>
                 </cloudHubDeployment>
