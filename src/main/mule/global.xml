@@ -22,8 +22,8 @@ http://www.mulesoft.org/schema/mule/service-now-nre http://www.mulesoft.org/sche
 	<http:listener-config name="user-services-sapi-HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="bfb095c2-4113-471d-b5fc-b14642fdf504" >
 		<http:listener-connection host="0.0.0.0" port="${http.port}" />
 	</http:listener-config>
-	<nationalrailway-servicenow-sapi:config name="Nationalrailway_servicenow_sapi_Config" doc:name="Nationalrailway-servicenow-sapi Config" doc:id="eb7831f7-2055-4c61-b4f3-75a51f1a1ed9" property_host="${serviceNow.host}" property_port="${serviceNow.port}" property_protocol="${serviceNow.protocol}" property_basePath="/api" property_responseTimeout="3000000"/>
 	<configuration doc:name="Configuration" doc:id="c9a089c1-8bfa-4ded-9d19-7861d09ed242" defaultErrorHandler-ref="globalError_Handler" />
+	<service-now-nre:config name="ServiceNow_NRE_Config" doc:name="ServiceNow-NRE Config" doc:id="aa599098-0c2b-416f-88eb-edb25aeed84c" property_host="${serviceNow.host}" property_port="${serviceNow.port}" property_protocol="${serviceNow.protocol}" property_responseTimeout="1000000"/>
 	<error-handler name="globalError_Handler" doc:id="d1ef84fd-e6bc-4472-a64c-73fdd13b6202" >
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fe06511c-2d93-4255-b5e3-7da3a371463e" type="HTTP:INTERNAL_SERVER_ERROR,DB:CONNECTIVITY,DB:RETRY_EXHAUSTED">
 				<try doc:name="Try" doc:id="f7a238da-fed4-4f13-bda2-d0f7bca6a9e6">
@@ -42,7 +42,7 @@ output application/json
 }]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<service-now-nre:create-incident doc:name="Create incident" doc:id="e13606cb-2fc2-4775-862a-72a35357d801" config-ref="Nationalrailway_servicenow_sapi_Config"/>
+				<service-now-nre:create-incident doc:name="Create incident" doc:id="e13606cb-2fc2-4775-862a-72a35357d801" config-ref="ServiceNow_NRE_Config"/>
 					<raise-error doc:name="APP:SERVER_CONNECTIVITY" doc:id="84e4e839-f740-4156-b784-0118157faad0" type="APP:SERVER_CONNECTIVITY" description='Internal Server Error' />
 				<error-handler >
 					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ec28a510-d142-45d9-981b-5ace3726f1b3" type="APP:SERVER_CONNECTIVITY">
