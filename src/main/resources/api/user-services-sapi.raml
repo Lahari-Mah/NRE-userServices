@@ -10,6 +10,8 @@ traits:
   client-id-required: !include /exchange_modules/ce59e7c2-b990-4fe5-98a4-b5dba8efff20/customer-trait/1.0.0/customer-trait.raml
 
 /customers:
+  is:
+    - client-id-required
   get:
     description: Retrieve the customer details from the system
     responses:
@@ -47,6 +49,8 @@ traits:
               description: Error Message
               message: Error in inserting data, Please check through!
   /{id}:
+    is:
+      - client-id-required
     get:
       description: Retrieve customer details by ID
       responses:
@@ -71,6 +75,8 @@ traits:
             input: !include /Examples/customerByIdExample.raml
     
     /subscriptions:
+      is:
+        - client-id-required
       get:
         description: Retrieve all subscriptions of customers
         responses:
@@ -107,6 +113,8 @@ traits:
                   description: Error message
                   message: Error in creating subscription data, Please check through!
       /{subscriptionId}:
+        is:
+          - client-id-required
         get:
           description: Retrieving each subscription data
           responses:
@@ -131,6 +139,8 @@ traits:
                 input: !include /Examples/subscriptionByIdExample.raml
 
         /alerts:
+          is:
+            - client-id-required
           get:
             description: Retrieve all alert notifications data under particular subscription
             responses:
@@ -167,6 +177,8 @@ traits:
                       description: Error message
                       message: Error in creating alert notiifications data, Please check through!
           /{alertId}:
+            is:
+              - client-id-required
             get:
               description: Retrieve specific alert notification data
               responses:
@@ -189,3 +201,19 @@ traits:
                   type: custlib.AlertIdType
                   examples:
                     input: !include /Examples/alertByIdExample.raml
+  /sfdc:
+    get:
+      description: Subscribed customer details integrated to Salesforce
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                description: Success
+                message: "Successfully Integrated" 
+        400:
+          body:
+            application/json:
+              example:
+                description: Error
+                message: "Error in integrating customers data to Salesforce"
