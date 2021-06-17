@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:service-now-nre="http://www.mulesoft.org/schema/mule/service-now-nre"
-	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:nationalrailway-servicenow-sapi="http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:service-now-nre="http://www.mulesoft.org/schema/mule/service-now-nre"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:nationalrailway-servicenow-sapi="http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
 http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
@@ -10,7 +10,8 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi http://www.mulesoft.org/schema/mule/nationalrailway-servicenow-sapi/current/mule-nationalrailway-servicenow-sapi.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/service-now-nre http://www.mulesoft.org/schema/mule/service-now-nre/current/mule-service-now-nre.xsd
-http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
 	<db:config name="MysqlDatabase_Config" doc:name="Database Config" doc:id="3c3f0890-614d-4e96-af2d-a288ed5f71e3" >
 		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.username}" password="${secure::database.password}" database="${database.schema}" />
 	</db:config>
@@ -28,6 +29,7 @@ http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mu
 	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="23dc79a6-94c6-4b9c-b935-201c15bc2feb" >
 		<salesforce:basic-connection username="laharidin@njc.com" password="Mah@123456789" securityToken="vxoqUpugaVPFdyT2Vn5ZP1GxB" />
 	</salesforce:sfdc-config>
+	<api-gateway:autodiscovery apiId="16976999" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="f2d492cb-0626-4d01-a7da-9438a103bad6" flowRef="user-services-sapi-main" />
 	<error-handler name="globalError_Handler" doc:id="d1ef84fd-e6bc-4472-a64c-73fdd13b6202" >
 		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fe06511c-2d93-4255-b5e3-7da3a371463e" type="HTTP:INTERNAL_SERVER_ERROR,DB:CONNECTIVITY,DB:RETRY_EXHAUSTED">
 				<try doc:name="Try" doc:id="f7a238da-fed4-4f13-bda2-d0f7bca6a9e6">
