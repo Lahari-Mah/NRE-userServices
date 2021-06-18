@@ -805,5 +805,6 @@ output application/json
 	</flow>
 	<flow name="user-sfdcFlow" doc:id="882c6057-e8e4-4973-8f5f-0de27d7905f6" >
 		<json-logger:logger doc:name="SFDC Start Logger" doc:id="507d5e63-da36-4166-b229-0c97adf7ae1b" config-ref="JSON_Logger_Config" message="SFDC Start Logs"/>
+		<salesforce:create type="Contact" doc:name="Create" doc:id="43dec994-d8db-4e08-9bef-0bec5aef6f4c" config-ref="Salesforce_Config"/>
 	</flow>
 </mule>
