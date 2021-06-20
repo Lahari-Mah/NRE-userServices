@@ -151,16 +151,6 @@ output application/json
         <flow-ref doc:name="user-subscriptionFlow" doc:id="d6c7e7e8-32c5-4e4b-8396-4669966fb059" name="user-subscriptionFlow" />
     </flow>
     <flow name="get:\customers\sfdc:user-services-sapi-config">
-        <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  description: "Success",
-  message: "Successfully Integrated"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+        <flow-ref doc:name="user-sfdcFlow" doc:id="589925ce-85cd-4c9d-9533-9d233c8285a4" name="user-sfdcFlow" />
     </flow>
 </mule>

@@ -254,4 +254,5 @@ type customerDetailsType = Array<{|  firstName: String,   lastName: String,   em
       </types:input-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#dfa16ded-7574-4580-8778-9ec4221b1657"/>
 </types:mule>

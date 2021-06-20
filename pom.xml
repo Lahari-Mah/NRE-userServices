@@ -154,13 +154,6 @@
             <classifier>mule-plugin</classifier>
         </dependency>
     	<dependency>
-            <groupId>ce59e7c2-b990-4fe5-98a4-b5dba8efff20</groupId>
-            <artifactId>user-services-sapi</artifactId>
-            <version>1.0.4</version>
-            <classifier>raml</classifier>
-            <type>zip</type>
-        </dependency>
-    	<dependency>
             <groupId>com.mulesoft.connectors</groupId>
             <artifactId>mule-salesforce-connector</artifactId>
             <version>10.7.0</version>
@@ -171,6 +164,13 @@
             <artifactId>mule-plugin-nationalrailway-servicenow-sapi</artifactId>
             <version>1.0.1</version>
             <classifier>mule-plugin</classifier>
+        </dependency>
+    	<dependency>
+            <groupId>ce59e7c2-b990-4fe5-98a4-b5dba8efff20</groupId>
+            <artifactId>user-services-sapi</artifactId>
+            <version>1.0.5</version>
+            <classifier>raml</classifier>
+            <type>zip</type>
         </dependency>
     </dependencies>
 
