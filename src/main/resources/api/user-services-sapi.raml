@@ -202,6 +202,8 @@ traits:
                   examples:
                     input: !include /Examples/alertByIdExample.raml
   /sfdc:
+    is: 
+      - client-id-required
     get:
       description: Subscribed customer details integrated to Salesforce
       responses:

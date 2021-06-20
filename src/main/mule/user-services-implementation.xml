@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
-http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
 	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="0cdb16a2-ced4-4117-8097-1f1fbe80406d" />
 	<validation:config name="Validation_Config1" doc:name="Validation Config" doc:id="2d341523-125c-4a9a-889b-4001ccec4a1e" />
 	<flow name="user-registrationFlow" doc:id="fab45949-eea9-4b69-b0f4-a5b3df83ebd6" >
@@ -805,6 +806,104 @@ output application/json
 	</flow>
 	<flow name="user-sfdcFlow" doc:id="882c6057-e8e4-4973-8f5f-0de27d7905f6" >
 		<json-logger:logger doc:name="SFDC Start Logger" doc:id="507d5e63-da36-4166-b229-0c97adf7ae1b" config-ref="JSON_Logger_Config" message="SFDC Start Logs"/>
-		<salesforce:create type="Contact" doc:name="Create" doc:id="43dec994-d8db-4e08-9bef-0bec5aef6f4c" config-ref="Salesforce_Config"/>
+		<db:select doc:name="SubscribedCustomers" doc:id="44689e47-3472-4872-9d0f-06cc254cc792" config-ref="MysqlDatabase_Config">
+			<db:sql ><![CDATA[select customer_id,first_name,last_name,email_id,phone_no
+from xxtrain_customer_details a,xxtrain_status_details b where customer_id in 
+(select distinct customer_id from xxtrain_subscription_details c where customer_id = c.customer_id GROUP BY customer_id
+HAVING COUNT(customer_id) >= 1) and b.status_type_id = a.status_type_id and b.status_type_name = 'ACTIVE';]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="PayloadtoRequiredFields" doc:id="89c35153-13bf-4139-8168-fa61d0228c51">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+
+payload map(payload01,index) -> 
+{
+	Name: payload01.customer_id as String,
+	last_name__c: payload01.last_name as String,
+	first_name__c: payload01.first_name as String,
+	phone_number__c: payload01.phone_no as Number,
+	email_id__c: payload01.email_id as String
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="Salesforce_BatchJob" doc:id="5ddac1ad-c0f4-42b9-a699-9d977a58fd5f">
+			<batch:process-records >
+				<batch:step name="DuplicateRemoval" doc:id="6a30e494-17b3-4610-9ce3-229951cdd82d">
+					<try doc:name="Try" doc:id="ed1a2cdf-bf4a-4491-ba4d-df162c908d47" >
+						<salesforce:query doc:name="Avoiding Duplicates" doc:id="0669e94f-0862-4cc0-8467-6f3cd3f54d4c" config-ref="Salesforce_Config" target="exists" targetValue="#[(sizeOf(payload) &gt; 0)]">
+						<salesforce:salesforce-query><![CDATA[select name from NRECustomer__c where name = ':custId' and first_name__c = ':custName']]></salesforce:salesforce-query>
+						<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	"custId" : payload.Name default " " as String,
+	"custName" : payload.first_name__c default " " as String
+}]]]></salesforce:parameters>
+					</salesforce:query>
+						<error-handler >
+							<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="8ed897c1-3c7e-46ea-ae77-df8e774e5256" type="ANY">
+								<ee:transform doc:name="ErrorMessage" doc:id="dfa16ded-7574-4580-8778-9ec4221b1657" >
+									<ee:message >
+									</ee:message>
+									<ee:variables >
+										<ee:set-variable variableName="errorVar" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error Type": error.errorType.identifier,
+	"Error Message": error.errorMessage.payload,
+	"Error Description": error.detailedDescription
+}]]></ee:set-variable>
+									</ee:variables>
+								</ee:transform>
+								<json-logger:logger doc:name="Salesforce Invalid ID Logger" doc:id="2aac2613-7b98-4e47-8a15-2004926a362e" config-ref="JSON_Logger_Config" message="Salesforce Invalid ID Logger" priority="ERROR">
+									<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(vars.errorVar) 
+}]]]></json-logger:content>
+								</json-logger:logger>
+							</on-error-continue>
+						</error-handler>
+					</try>
+					<json-logger:logger doc:name="SalesForce_QueryLogger" doc:id="78c5a3ff-a1d2-481f-891d-a29d14fcf8e3" config-ref="JSON_Logger_Config" message="Records that passed through Salesforce" tracePoint="FLOW"/>
+				</batch:step>
+				<batch:step name="salesforceIntegration" doc:id="7f175f37-3aa5-4b00-8b9e-e10bcf8a591b" acceptExpression="#[not vars.exists]">
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="5ff7cde6-abe8-4e59-ad96-9b2b1441875a" size="3">
+						<salesforce:create type="NRECustomer__c" doc:name="DataPullingIntoSalesforce" doc:id="43dec994-d8db-4e08-9bef-0bec5aef6f4c" config-ref="Salesforce_Config" />
+						<ee:transform doc:name="SalesforcePayload" doc:id="d55934a1-ace4-4cc3-af0d-d84487a0c31e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Description: "Successfully Integrated to Salesforce",
+	Message: payload.items.message,
+	StatusCode: payload.items.statusCode,
+	successfull: payload.successful
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+						<json-logger:logger doc:name="Data Created in Salesforce Logger" doc:id="0e6faf76-1bfb-41ce-98b2-7f5717e5abac" config-ref="JSON_Logger_Config" message="Data Created in Salesforce Logger" tracePoint="FLOW" />
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<json-logger:logger doc:name="BatchComplete_Logger" doc:id="c140303e-b99a-4c49-a8fa-82674a4a538a" config-ref="JSON_Logger_Config" message="BatchComplete Logger" tracePoint="FLOW"/>
+			</batch:on-complete>
+		</batch:job>
+		<ee:transform doc:name="FinalPayload" doc:id="e94c8d7e-71c6-4f44-b350-9aa9e935ff97" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Description: "Successfully Integrated to Salesforce",
+	Message: "Records that passed through Salesforce"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="SFDC End Logger" doc:id="412aaaf0-f5a6-4832-9261-95a6a3d5065f" config-ref="JSON_Logger_Config" message="SFDC End Logger" tracePoint="END"/>
 	</flow>
 </mule>
